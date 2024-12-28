@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    container_name: 'mds-postgres'
+    ports:
+      - "5432:5432"
+    networks:
+      - mds-network
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mds
+      POSTGRES_USER: postgres
+    volumes:
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./pg-data:/var/lib/postgresql/data
+    command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+
+  keycloak:
+    container_name: 'mds-keycloak'
+    image: quay.io/keycloak/keycloak:25.0.0
+    command: start-dev --verbose
+    ports:
+      - "8090:8080"
+    networks:
+      - mds-network
+    depends_on:
+      - postgres
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_SCHEMA: public
+      KC_DB_URL: jdbc:postgresql://mds-postgres:5432/mds1
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HOSTNAME: localhost
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
+
+  zookeeper:
+    container_name: mds-zookeeper
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - '2181:2181'
+    depends_on:
+      - keycloak
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: mds-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: mds-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://mds-kafka:9091,PLAINTEXT_HOST://localhost:9092,PLAINTEXT_KAFKA_HOST://mds-kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_KAFKA_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+
+networks:
+  mds-network:
+    driver: bridge
+
