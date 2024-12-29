@@ -13,7 +13,7 @@ The first one would be "system" and the second one "ticket", which had each thei
 </p>
 
 <p align="center">
-I also wanted to work more on my Angular knowledge and implemented the <a href="github.com/yohagos/mds-ng">Frontend</a> for this Application with it. 
+I also wanted to work more on my Angular knowledge and implemented the <a href="https://github.com/yohagos/mds-ng">Frontend</a> for this Application with it. 
 </p>
 
 <h3 align="left">Languages and Tools:</h3>
